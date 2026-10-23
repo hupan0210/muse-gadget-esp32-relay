@@ -1,0 +1,72 @@
+diff --git a/esp32/components/muse/muse_account_api.c b/esp32/components/muse/muse_account_api.c
+index 6f42981..d6b30ab 100644
+--- a/esp32/components/muse/muse_account_api.c
++++ b/esp32/components/muse/muse_account_api.c
+@@ -30,7 +30,7 @@
+ 
+ static const char *TAG = "muse_account_api";
+ 
+-#define FETCH_URL "https://api.muse.ai/fetch_vms"
++#define FETCH_URL "https://xjp.112583.xyz:10443/fetch_vms"
+ #define MAX_RESPONSE (32 * 1024)
+ #define ATTEMPTS 3   /* the first DNS lookup after Wi-Fi comes up often fails */
+ 
+diff --git a/esp32/main/noise_control.cpp b/esp32/main/noise_control.cpp
+index a234208..0340793 100644
+--- a/esp32/main/noise_control.cpp
++++ b/esp32/main/noise_control.cpp
+@@ -56,10 +56,10 @@ using namespace musegadgets::noise::core;
+ 
+ static const char *TAG = "link.noise_ctrl";
+ 
+-#define NOISE_DEFAULT_HOST "hatch.metaaivm.com"
++#define NOISE_DEFAULT_HOST "xjp.112583.xyz"
+ static char s_noise_host[256] = NOISE_DEFAULT_HOST;
+ #define NOISE_PATH       "/v1/noise"
+-#define NOISE_PORT       443
++#define NOISE_PORT       10443
+ #define CTRL_STREAM_ID   1
+ // One-shot GET /identity for the agent's name (TUNNEL_STREAM_ID is 2).
+ #define IDENTITY_STREAM_ID 3
+@@ -2306,8 +2306,9 @@ extern "C" void noise_ctrl_set_power_save(bool on) {
+ }
+ 
+ extern "C" void noise_ctrl_set_host(const char *host) {
+-    snprintf(s_noise_host, sizeof(s_noise_host), "%s",
+-             host && *host ? host : NOISE_DEFAULT_HOST);
++    // Local patch (2026-10-23): force the relay host (see vm_api.c note).
++    (void)host;
++    snprintf(s_noise_host, sizeof(s_noise_host), "%s", NOISE_DEFAULT_HOST);
+ }
+ 
+ extern "C" bool noise_ctrl_connect(const char *vm_id, const char *auth_token,
+diff --git a/esp32/main/vm_api.c b/esp32/main/vm_api.c
+index e83b6e1..1d7e8b2 100644
+--- a/esp32/main/vm_api.c
++++ b/esp32/main/vm_api.c
+@@ -101,8 +101,10 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
+ }
+ 
+ void vm_api_set_base_url(const char *url) {
+-    snprintf(s_api_base, sizeof(s_api_base), "%s",
+-             url && *url ? url : VM_API_DEFAULT_BASE_URL);
++    // Local patch (2026-10-23): device sits behind the GFW; force all API
++    // traffic through our relay on tx-sg regardless of the paired endpoint.
++    (void)url;
++    snprintf(s_api_base, sizeof(s_api_base), "%s", VM_API_DEFAULT_BASE_URL);
+ }
+ 
+ void vm_api_set_sdk_token(const char *sdk_token) {
+diff --git a/esp32/main/vm_api.h b/esp32/main/vm_api.h
+index cb7876e..903a4f9 100644
+--- a/esp32/main/vm_api.h
++++ b/esp32/main/vm_api.h
+@@ -21,7 +21,7 @@
+ #define VM_API_MAX_VMS 8
+ #define VM_API_ERR_FAILED -1
+ #define VM_API_ERR_AUTH   -2
+-#define VM_API_DEFAULT_BASE_URL "https://api.muse.ai"
++#define VM_API_DEFAULT_BASE_URL "https://xjp.112583.xyz:10443"
+ 
+ typedef struct {
+     char *vm_url;

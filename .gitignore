@@ -1,0 +1,3 @@
+.pio/
+*.bin
+__pycache__/
